@@ -1,0 +1,168 @@
+obfuscate = (inp: @string, use_random_variable_names: @bool = true) {
+    alpha = @array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    naming = @array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_")
+    symbols = @array("-+=<>{}()[]:;!@#$%^&|*\"'\\.,/")
+    whitespace = @array(" \t\n")
+    thing = @array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-+=<>{}()[]:;!@#$%^&|*\"'\\.,/ \n")
+    whatever = "YQYgYwZAZQZgZwaAaQagawbAbQbgbwcAcQcgcwdAdQdgdweAeQegQQQgQwRARQRgRwSASQSgSwTATQTgTwUAUQUgUwVAVQVgVwWAWQWgMQMgMwNANQNgNwOAOQMAXwLQKwPQPAPgewfQKAKQWwXQOgOwIQQAIwJAJQXgJgfAKgIgJwXALgLALwIACg"    
+
+    let input = inp
+    let random_gen_i = -1
+    let variables = []
+    let output = ""
+    
+    for i in 0..input.length {
+        if i >= input.length {
+            break
+        }
+        if !(input[i] in thing) {
+            input = input.replace(input[i], "")
+        }
+        thing.index(input[i])
+    }
+
+    random_gen = (amt1: @number = 8, amt2: @number = 12) {
+        let amt = amt1
+        if amt2 != 0 {
+            amt = $.random(amt..amt2)
+        }
+        random_gen_i++
+        return [alpha.pick() for _ in 0..amt].join("")+ alpha[random_gen_i%alpha.length]*($.floor(random_gen_i/alpha.length)+1)
+    }
+    
+    if use_random_variable_names {
+        for i in 0..input.length {
+            _char = input[i]
+
+            let in_string = false
+            let in_comment = false
+            let last_char_was_slash = false
+            let last_char_was_backslash = false
+            let token_before_equals = ""
+            
+            match _char {
+                in "\"'": (){
+                    if in_comment {return}
+                    if last_char_was_backslash {last_char_was_backslash = false; return}
+
+                    in_string = !in_string
+                }(),
+                =="\n": (){
+                    in_string = false
+                    in_comment = false
+                    last_char_was_slash = false
+                    last_char_was_backslash = false
+                }(),
+                =="\\": (){
+                    if last_char_was_backslash {last_char_was_backslash = false; return}
+                    
+                    last_char_was_backslash = true
+                }(),
+                =="/": (){
+                    if last_char_was_slash {
+                        in_comment = !in_comment
+                        return
+                    }
+                    
+                    last_char_was_slash = true
+                }(),
+                =="=": (){
+                    last_char_was_slash = false
+
+                    if in_string {return}
+                    if in_comment {return}
+                    if last_char_was_backslash {last_char_was_backslash = false; return}
+
+                    last_char_was_backslash = false
+
+                    let j = i
+
+                    if !(input[j+1] in naming+@array(" \t\"'!([{@$-+")) {return}
+                    
+                    while true {
+                        if j == 0 {break}
+                        j--
+                        
+                        if !(input[j] in naming+@array(" \t")) {break}
+                        if token_before_equals != "" && input[j] in " \t" {break}
+
+                        if input[j] in naming {
+                            token_before_equals += input[j]
+                        }
+                    }
+                    token_before_equals = token_before_equals.reverse()
+                    if token_before_equals.length == 0 {return}
+                    if !(token_before_equals[0] in alpha) {token_before_equals = ""; return}
+                    if variables.index(token_before_equals) == null {variables.push(token_before_equals)}
+                }(),
+                else: (){
+                    last_char_was_slash = false
+                    last_char_was_backslash = false
+                }(),
+            }
+        }
+
+        lexer = (string) {
+            let tokens = []
+            let context = []
+            
+            for char in 0..string.length {
+                if string[char] in naming {
+                    if char <= string.length && string[char] in naming {
+                        context.push(string[char])
+                    } 
+                    if char + 1 == string.length || !(string[char + 1] in naming) {
+                        tokens.push(context.join(""))
+                        context = []
+                    }
+                } else if string[char] in whitespace {
+                    if char == "\t" {
+                        tokens.push("    ")
+                    } else {
+                        tokens.push(string[char])
+                    }
+                } else if string[char] in symbols {
+                    if char <= string.length && string[char] in symbols {
+                        tokens.push(string[char])
+                    } 
+                } 
+            }
+            return tokens
+        }
+
+        let tokens = lexer(input)
+        let variables_used = {}
+        let in_string = false
+
+        for token in 0..tokens.length {
+            if tokens[token] in "\"'" { in_string = !in_string }
+            if in_string {continue}
+            if !(tokens[token] in variables) {continue}
+            
+            if tokens[token] in variables_used.keys() == false {
+                variables_used.set(tokens[token], random_gen())
+            }
+            tokens[token] = variables_used.get(tokens[token])
+        }
+        
+        output = tokens.join("")
+    } else {
+        output = input
+    }
+
+    output = "".join(["/*"+random_gen()+"*/", output]) //salt
+    let current_not_b64_char_to_b64 = []
+
+    for i in 0..output.length {
+        current_not_b64_char_to_b64.push(whatever[thing.index(output[i])*2]+whatever[thing.index(output[i])*2+1])
+    }
+
+    current_not_b64_char_to_b64 = $.b64encode($.b64encode(current_not_b64_char_to_b64.join("")))
+
+    arr = [random_gen(), whatever, random_gen(), random_gen(), random_gen(), random_gen(), random_gen(), random_gen(), random_gen(), random_gen(), random_gen(), current_not_b64_char_to_b64, random_gen()]
+    output = "{2}=\"{1}\";extract $;{3}={4}=>b64decode({4});{6}={3}(\"{11}\");{0}={5}=>{3}({2}[{5}*2]+{2}[{5}*2+1]);let {7}=[];for {8} in 0..floor({3}({6}).length/2+1){if {3}({6}).length/2<={8}{break};{7}.push({0}({2}.index({3}({6})[{8}*2]+{3}({6})[{8}*2+1])/2))};{7}={7}.join(\"\");writefile(\"{10}.spwn\",\"{12}=(){\\n\"+{7}+\"\\n}\\nreturn {{10}:{12}}\");{9}=import \"{10}.spwn\";writefile(\"{10}.spwn\",\"\");{9}.{10}()".fmt(arr)
+    
+    return output
+}
+
+return {obfuscate: obfuscate}

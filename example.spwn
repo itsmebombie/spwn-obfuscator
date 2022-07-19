@@ -1,0 +1,3 @@
+obfuscator = import obfuscator
+
+$.writefile("output.spwn", obfuscator.obfuscate("a = 'hello'\n$.print(a)"))
