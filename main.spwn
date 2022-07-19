@@ -1,3 +1,0 @@
-obfuscator = import obfuscator
-
-$.writefile("output.spwn", obfuscator.obfuscate("var = 'hello'\n$.print(var)", use_random_var_names=true))
