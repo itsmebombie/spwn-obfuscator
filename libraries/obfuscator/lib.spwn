@@ -83,6 +83,7 @@ obfuscate = (inp: @string, use_random_variable_names: @bool = true) {
                         if j == 0 {break}
                         j--
                         
+                        if input[j] == "@" {token_before_equals = ""; break}
                         if !(input[j] in naming+@array(" \t")) {break}
                         if token_before_equals != "" && input[j] in " \t" {break}
 
