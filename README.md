@@ -8,7 +8,7 @@
  
  ## output
  [click here for output](/output.spwn)
- (note that there should be different outputs every time you run the program, even with the same code)
+ (note that there should be slightly different outputs every time you run the program, even with the same code)
 
  ## explanation
  comig soom
