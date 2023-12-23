@@ -1,5 +1,6 @@
 # spwn-obfuscator
 This obfuscator must be only used for educational purposes and not for obfuscating anything important that will be released!
+
 Note: this only works on spwn 0.8 and may not work for older versions.
 
 ## use
